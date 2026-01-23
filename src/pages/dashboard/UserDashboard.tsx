@@ -1,20 +1,32 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FileText, Calendar, Clock, ArrowRight, Package } from 'lucide-react';
+import { FileText, Calendar, Clock, ArrowRight, Package, Loader2 } from 'lucide-react';
 import { UserDashboardLayout } from '@/components/dashboard/UserDashboardLayout';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/store/authStore';
-import { useDataStore } from '@/store/dataStore';
+import { useAuth } from '@/hooks/useAuth';
+import { useProducts } from '@/hooks/useProducts';
+import { useRFQs } from '@/hooks/useRFQs';
 import { formatDate } from '@/lib/validation';
 
 const UserDashboard = () => {
-  const { user } = useAuthStore();
-  const { rfqs, products } = useDataStore();
+  const { user, profile } = useAuth();
+  const { products, isLoading: productsLoading } = useProducts();
+  const { rfqs, isLoading: rfqsLoading } = useRFQs();
 
-  const userRFQs = rfqs.filter((r) => r.userId === user?.id);
+  const userRFQs = rfqs.filter((r) => r.user_id === user?.id);
   const pendingRFQs = userRFQs.filter((r) => r.status !== 'Closed');
-  const lastRFQ = userRFQs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  const lastRFQ = userRFQs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
   const featuredProducts = products.filter((p) => p.featured).slice(0, 4);
+
+  if (productsLoading || rfqsLoading) {
+    return (
+      <UserDashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-gold" />
+        </div>
+      </UserDashboardLayout>
+    );
+  }
 
   return (
     <UserDashboardLayout>
@@ -22,10 +34,10 @@ const UserDashboard = () => {
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            Welcome, <span className="gold-text">{user?.username}</span>
+            Welcome, <span className="gold-text">{profile?.username || user?.email?.split('@')[0]}</span>
           </h1>
           <p className="text-muted-foreground">
-            User ID: <span className="text-primary font-mono">{user?.userCode}</span>
+            User ID: <span className="text-primary font-mono">{profile?.user_code || 'N/A'}</span>
           </p>
         </div>
 
@@ -60,7 +72,7 @@ const UserDashboard = () => {
               </div>
               <div>
                 <p className="text-lg font-bold text-foreground">
-                  {lastRFQ ? formatDate(lastRFQ.createdAt) : 'N/A'}
+                  {lastRFQ ? formatDate(new Date(lastRFQ.created_at)) : 'N/A'}
                 </p>
                 <p className="text-sm text-muted-foreground">Last RFQ</p>
               </div>
@@ -83,7 +95,11 @@ const UserDashboard = () => {
               <Link key={product.id} to={`/products/${product.slug}`}>
                 <div className="glass-card overflow-hidden card-hover group">
                   <div className="aspect-video overflow-hidden">
-                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <img 
+                      src={product.images?.[0] || '/placeholder.svg'} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                    />
                   </div>
                   <div className="p-4">
                     <p className="text-xs text-primary">{product.category}</p>
