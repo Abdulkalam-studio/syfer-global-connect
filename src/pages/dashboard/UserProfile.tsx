@@ -1,39 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, Building, MapPin, Save, Edit2 } from 'lucide-react';
+import { User, Mail, Phone, Building, MapPin, Save, Edit2, Loader2 } from 'lucide-react';
 import { UserDashboardLayout } from '@/components/dashboard/UserDashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/store/authStore';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 const UserProfile = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user, profile, updateProfile, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    username: user?.username || '',
-    phone: user?.phone || '',
-    companyName: user?.companyName || '',
-    country: user?.location?.country || '',
-    state: user?.location?.state || '',
-    city: user?.location?.city || '',
+    username: '',
+    phone: '',
+    company_name: '',
+    country: '',
+    state: '',
+    city: '',
   });
 
-  const handleSave = () => {
-    updateUser({
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        username: profile.username || '',
+        phone: profile.phone || '',
+        company_name: profile.company_name || '',
+        country: profile.country || '',
+        state: profile.state || '',
+        city: profile.city || '',
+      });
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    const { error } = await updateProfile({
       username: formData.username,
       phone: formData.phone,
-      companyName: formData.companyName,
-      location: {
-        country: formData.country,
-        state: formData.state,
-        city: formData.city,
-      },
+      company_name: formData.company_name,
+      country: formData.country,
+      state: formData.state,
+      city: formData.city,
     });
-    setIsEditing(false);
-    toast.success('Profile updated successfully!');
+
+    if (error) {
+      toast.error('Failed to update profile');
+    } else {
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+    }
+    setIsSaving(false);
   };
+
+  if (isLoading) {
+    return (
+      <UserDashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-gold" />
+        </div>
+      </UserDashboardLayout>
+    );
+  }
 
   return (
     <UserDashboardLayout>
@@ -53,11 +82,11 @@ const UserProfile = () => {
             <div className="w-24 h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <User className="w-12 h-12 text-primary" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-1">{user?.username}</h2>
-            <p className="text-sm text-muted-foreground mb-4">ID: {user?.userCode}</p>
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${user?.emailVerified ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+            <h2 className="text-xl font-bold text-foreground mb-1">{profile?.username || user?.email?.split('@')[0]}</h2>
+            <p className="text-sm text-muted-foreground mb-4">ID: {profile?.user_code || 'N/A'}</p>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${profile?.email_verified ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
               <span className="w-2 h-2 rounded-full bg-current" />
-              {user?.emailVerified ? 'Verified' : 'Pending Verification'}
+              {profile?.email_verified ? 'Verified' : 'Pending Verification'}
             </div>
           </div>
 
@@ -75,7 +104,7 @@ const UserProfile = () => {
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   />
                 ) : (
-                  <p className="text-foreground py-2">{user?.username}</p>
+                  <p className="text-foreground py-2">{profile?.username}</p>
                 )}
               </div>
 
@@ -96,7 +125,7 @@ const UserProfile = () => {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 ) : (
-                  <p className="text-foreground py-2">{user?.phone}</p>
+                  <p className="text-foreground py-2">{profile?.phone || 'N/A'}</p>
                 )}
               </div>
 
@@ -106,11 +135,11 @@ const UserProfile = () => {
                 </Label>
                 {isEditing ? (
                   <Input
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                   />
                 ) : (
-                  <p className="text-foreground py-2">{user?.companyName || 'N/A'}</p>
+                  <p className="text-foreground py-2">{profile?.company_name || 'N/A'}</p>
                 )}
               </div>
 
@@ -138,7 +167,9 @@ const UserProfile = () => {
                   </div>
                 ) : (
                   <p className="text-foreground py-2">
-                    {user?.location ? `${user.location.city}, ${user.location.state}, ${user.location.country}` : 'N/A'}
+                    {profile?.city || profile?.state || profile?.country 
+                      ? `${profile.city || ''}, ${profile.state || ''}, ${profile.country || ''}`.replace(/^, |, $|, ,/g, '') 
+                      : 'N/A'}
                   </p>
                 )}
               </div>
@@ -146,10 +177,11 @@ const UserProfile = () => {
 
             {isEditing && (
               <div className="flex gap-4 mt-8">
-                <Button onClick={handleSave} variant="gold" className="gap-2">
-                  <Save className="w-4 h-4" /> Save Changes
+                <Button onClick={handleSave} variant="gold" className="gap-2" disabled={isSaving}>
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save Changes
                 </Button>
-                <Button onClick={() => setIsEditing(false)} variant="outline">
+                <Button onClick={() => setIsEditing(false)} variant="outline" disabled={isSaving}>
                   Cancel
                 </Button>
               </div>
