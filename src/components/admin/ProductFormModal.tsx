@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2 } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ImageUploadField } from './ImageUploadField';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -110,22 +111,6 @@ export const ProductFormModal = ({ isOpen, onClose, editingProductId }: ProductF
     onClose();
   };
 
-  const addImageField = () => {
-    setFormData({ ...formData, images: [...formData.images, ''] });
-  };
-
-  const removeImageField = (index: number) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
-  };
-
-  const updateImage = (index: number, value: string) => {
-    const newImages = [...formData.images];
-    newImages[index] = value;
-    setFormData({ ...formData, images: newImages });
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -214,30 +199,11 @@ export const ProductFormModal = ({ isOpen, onClose, editingProductId }: ProductF
           <div className="space-y-4">
             <h4 className="font-medium text-foreground border-b border-border pb-2">Media</h4>
             <div className="space-y-3">
-              <Label>Image URLs</Label>
-              {formData.images.map((img, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={img}
-                    onChange={(e) => updateImage(index, e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {formData.images.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeImageField(index)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addImageField} className="gap-1">
-                <Plus className="w-4 h-4" /> Add Image
-              </Button>
+              <Label>Product Images</Label>
+              <ImageUploadField
+                images={formData.images}
+                onImagesChange={(images) => setFormData({ ...formData, images })}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="videoUrl">Video URL (YouTube/Vimeo)</Label>
