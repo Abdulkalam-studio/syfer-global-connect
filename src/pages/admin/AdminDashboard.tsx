@@ -1,35 +1,17 @@
 import { motion } from 'framer-motion';
-import { Users, Package, FileText, MessageSquare, Loader2 } from 'lucide-react';
+import { Users, Package, FileText, MessageSquare } from 'lucide-react';
 import { AdminDashboardLayout } from '@/components/dashboard/AdminDashboardLayout';
-import { useProducts } from '@/hooks/useProducts';
-import { useRFQs } from '@/hooks/useRFQs';
-import { useProfiles } from '@/hooks/useProfiles';
-import { useContacts } from '@/hooks/useContacts';
+import { useDataStore } from '@/store/dataStore';
 
 const AdminDashboard = () => {
-  const { products, isLoading: productsLoading } = useProducts();
-  const { rfqs, isLoading: rfqsLoading } = useRFQs();
-  const { profiles, isLoading: profilesLoading } = useProfiles();
-  const { contacts, isLoading: contactsLoading } = useContacts();
-
-  const isLoading = productsLoading || rfqsLoading || profilesLoading || contactsLoading;
+  const { users, products, rfqs, contacts } = useDataStore();
 
   const stats = [
-    { icon: Users, label: 'Total Users', value: profiles.length, color: 'text-blue-500 bg-blue-500/10' },
+    { icon: Users, label: 'Total Users', value: users.length, color: 'text-blue-500 bg-blue-500/10' },
     { icon: Package, label: 'Products', value: products.length, color: 'text-green-500 bg-green-500/10' },
     { icon: FileText, label: 'RFQs', value: rfqs.length, color: 'text-primary bg-primary/10' },
     { icon: MessageSquare, label: 'Contact Inquiries', value: contacts.length, color: 'text-purple-500 bg-purple-500/10' },
   ];
-
-  if (isLoading) {
-    return (
-      <AdminDashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-gold" />
-        </div>
-      </AdminDashboardLayout>
-    );
-  }
 
   return (
     <AdminDashboardLayout>
@@ -65,12 +47,12 @@ const AdminDashboard = () => {
               </thead>
               <tbody>
                 {rfqs.slice(0, 5).map((rfq) => {
-                  const profile = profiles.find((p) => p.id === rfq.user_id);
-                  const product = products.find((p) => p.id === rfq.product_id);
+                  const user = users.find((u) => u.id === rfq.userId);
+                  const product = products.find((p) => p.id === rfq.productId);
                   return (
                     <tr key={rfq.id} className="border-b border-border/50">
-                      <td className="py-3 px-4 text-foreground">{new Date(rfq.created_at).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 text-foreground">{profile?.username || 'Unknown'}</td>
+                      <td className="py-3 px-4 text-foreground">{new Date(rfq.createdAt).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 text-foreground">{user?.username || 'Unknown'}</td>
                       <td className="py-3 px-4 text-foreground">{product?.name || 'Unknown'}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -81,13 +63,6 @@ const AdminDashboard = () => {
                     </tr>
                   );
                 })}
-                {rfqs.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                      No RFQs yet
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>

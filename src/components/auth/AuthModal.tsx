@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Building, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Building, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
-import { validatePassword, validateEmail, validatePhone } from '@/lib/validation';
+import { useAuthStore, checkIsAdmin } from '@/store/authStore';
+import { useDataStore } from '@/store/dataStore';
+import { validatePassword, validateEmail, validatePhone, generateUserCode, generateId } from '@/lib/validation';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -16,7 +17,8 @@ export const AuthModal = () => {
   const [activeTab, setActiveTab] = useState<AuthTab>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, isAdmin } = useAuth();
+  const { login } = useAuthStore();
+  const { users, addUser } = useDataStore();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -37,35 +39,55 @@ export const AuthModal = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn(loginForm.email, loginForm.password);
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
-    if (error) {
-      let message = 'Invalid email or password. Please try again.';
-      if (error.message.includes('Invalid login credentials')) {
-        message = 'Invalid email or password. Please try again.';
-      } else if (error.message.includes('Email not confirmed')) {
-        message = 'Please verify your email before logging in.';
-      }
+    // Check admin credentials
+    const isAdmin = checkIsAdmin(loginForm.email, loginForm.password);
+    
+    if (isAdmin) {
+      const adminUser = {
+        id: 'admin',
+        username: 'Admin',
+        email: loginForm.email,
+        phone: '',
+        companyName: 'Syfer Exports',
+        location: { country: 'India', state: '', city: '' },
+        userCode: '00',
+        emailVerified: true,
+        isAdmin: true,
+        createdAt: new Date(),
+      };
+      login(adminUser);
       toast({
-        title: 'Login failed',
-        description: message,
-        variant: 'destructive',
+        title: 'Welcome back, Admin!',
+        description: 'Redirecting to admin dashboard...',
       });
       setIsLoading(false);
+      navigate('/admin');
+      return;
+    }
+
+    // Check regular user
+    const user = users.find((u) => u.email === loginForm.email);
+    if (user) {
+      // In real app, verify password hash
+      login(user);
+      toast({
+        title: `Welcome back, ${user.username}!`,
+        description: 'Redirecting to your dashboard...',
+      });
+      setIsLoading(false);
+      navigate('/dashboard');
       return;
     }
 
     toast({
-      title: 'Welcome back!',
-      description: 'Redirecting to your dashboard...',
+      title: 'Login failed',
+      description: 'Invalid email or password. Please try again.',
+      variant: 'destructive',
     });
     setIsLoading(false);
-    
-    // Use setTimeout to ensure state updates first
-    setTimeout(() => {
-      // Check if admin by refetching - the AuthProvider will update isAdmin
-      window.location.href = window.location.origin + (loginForm.email === 'syfer071@gmail.com' ? '/admin' : '/dashboard');
-    }, 100);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -92,38 +114,43 @@ export const AuthModal = () => {
       return;
     }
 
-    const { error } = await signUp(
-      registerForm.email,
-      registerForm.password,
-      registerForm.username,
-      registerForm.phone
-    );
-
-    if (error) {
-      let message = 'Registration failed. Please try again.';
-      if (error.message.includes('already registered')) {
-        message = 'This email is already registered.';
-      }
-      toast({
-        title: 'Registration failed',
-        description: message,
-        variant: 'destructive',
-      });
+    // Check if email exists
+    if (users.find((u) => u.email === registerForm.email)) {
+      toast({ title: 'Email already registered', variant: 'destructive' });
       setIsLoading(false);
       return;
     }
 
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const newUser = {
+      id: generateId('user'),
+      username: registerForm.username,
+      email: registerForm.email,
+      phone: registerForm.phone,
+      companyName: registerForm.companyName || undefined,
+      location: {
+        country: registerForm.country,
+        state: registerForm.state,
+        city: registerForm.city,
+      },
+      userCode: generateUserCode(),
+      emailVerified: false,
+      isAdmin: false,
+      createdAt: new Date(),
+    };
+
+    addUser(newUser);
+    login(newUser);
+    
     toast({
       title: 'Registration successful!',
-      description: 'Welcome to Syfer Exports.',
+      description: 'Welcome to Syfer Exports. Please verify your email.',
     });
     
     setIsLoading(false);
-    
-    // Redirect after registration
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 100);
+    navigate('/dashboard');
   };
 
   return (
