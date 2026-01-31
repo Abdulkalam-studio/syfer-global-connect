@@ -1,18 +1,27 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 export const ProtectedRoute = ({ adminOnly = false }: { adminOnly?: boolean }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { user, isAdmin, isLoading } = useAuthContext();
 
-  if (!isAuthenticated) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Navigate to="/" replace />;
   }
 
-  if (adminOnly && !user?.isAdmin) {
+  if (adminOnly && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (!adminOnly && user?.isAdmin) {
+  if (!adminOnly && isAdmin) {
     return <Navigate to="/admin" replace />;
   }
 
