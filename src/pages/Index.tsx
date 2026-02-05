@@ -1,21 +1,23 @@
-import { PremiumHero } from '@/components/landing/PremiumHero';
-import { PremiumNavbar } from '@/components/landing/PremiumNavbar';
-import { PremiumFooter } from '@/components/landing/PremiumFooter';
-import { FeaturedProductsSection } from '@/components/landing/FeaturedProductsSection';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
+import { HeroSection } from '@/components/landing/HeroSection';
+import { FeaturedProducts } from '@/components/landing/FeaturedProducts';
 import { CategoriesSection } from '@/components/landing/CategoriesSection';
-import { WhyChooseUsSection } from '@/components/landing/WhyChooseUsSection';
+import { WhyChooseUs } from '@/components/landing/WhyChooseUs';
 import { CTASection } from '@/components/landing/CTASection';
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-navy">
-      <PremiumNavbar />
-      <PremiumHero />
-      <FeaturedProductsSection />
-      <CategoriesSection />
-      <WhyChooseUsSection />
-      <CTASection />
-      <PremiumFooter />
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main>
+        <HeroSection />
+        <FeaturedProducts />
+        <CategoriesSection />
+        <WhyChooseUs />
+        <CTASection />
+      </main>
+      <Footer />
     </div>
   );
 };
