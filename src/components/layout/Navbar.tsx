@@ -5,7 +5,7 @@ import { Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.png';
+
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -55,11 +55,7 @@ export const Navbar = () => {
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2"
             >
-              <img 
-                src={logo} 
-                alt="Syfer Exports" 
-                className="h-12 w-auto"
-              />
+              <span className="text-xl font-bold text-primary">Syfer Exports</span>
             </motion.div>
           </Link>
 
