@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,10 @@ export const PremiumNavbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAdmin, signOut, isLoading } = useAuthContext();
+
+  const isLandingPage = location.pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,7 +67,7 @@ export const PremiumNavbar = () => {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className={`hidden md:flex items-center gap-8 ${isLandingPage ? 'invisible' : ''}`}>
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -131,7 +134,7 @@ export const PremiumNavbar = () => {
               className="md:hidden bg-navy-light/95 backdrop-blur-lg border-t border-border/30"
             >
               <div className="container mx-auto px-6 py-6 space-y-4">
-                {navLinks.map((link) => (
+                {!isLandingPage && navLinks.map((link) => (
                   <Link
                     key={link.href}
                     to={link.href}
