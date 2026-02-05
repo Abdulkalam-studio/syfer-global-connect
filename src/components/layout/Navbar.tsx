@@ -5,7 +5,7 @@ import { Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
-
+import logo from '@/assets/logo.png';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -50,12 +50,20 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2"
             >
-              <span className="text-xl font-bold text-primary">Syfer Exports</span>
+              <img 
+                src={logo} 
+                alt="Syfer Exports" 
+                className="h-10 w-auto"
+              />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-primary leading-tight">Syfer Exports</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">Global Trade from India</span>
+              </div>
             </motion.div>
           </Link>
 
