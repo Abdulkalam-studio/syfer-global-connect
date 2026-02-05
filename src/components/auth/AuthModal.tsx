@@ -8,7 +8,7 @@ import { useAuthStore, checkIsAdmin } from '@/store/authStore';
 import { useDataStore } from '@/store/dataStore';
 import { validatePassword, validateEmail, validatePhone, generateUserCode, generateId } from '@/lib/validation';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 type AuthTab = 'login' | 'register';
@@ -242,9 +242,9 @@ export const AuthModal = () => {
               </Button>
 
               <div className="text-center">
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/forgot-password" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </motion.form>
           ) : (
