@@ -7,10 +7,14 @@ import { WhyChooseUsSection } from '@/components/landing/WhyChooseUsSection';
 import { CTASection } from '@/components/landing/CTASection';
 
 const Index = () => {
+  const scrollToAuth = () => {
+    document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen bg-navy">
-      <PremiumNavbar />
-      <PremiumHero />
+    <div className="min-h-screen bg-cream">
+      <PremiumNavbar onAuthClick={scrollToAuth} />
+      <PremiumHero scrollToAuth={scrollToAuth} />
       <FeaturedProductsSection />
       <CategoriesSection />
       <WhyChooseUsSection />

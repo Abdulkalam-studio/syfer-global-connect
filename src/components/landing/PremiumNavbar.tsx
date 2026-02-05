@@ -3,10 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { AuthForm } from '@/components/auth/AuthForm';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -15,10 +12,13 @@ const navLinks = [
   { href: '/contact', label: 'Contact' },
 ];
 
-export const PremiumNavbar = () => {
+interface PremiumNavbarProps {
+  onAuthClick?: () => void;
+}
+
+export const PremiumNavbar = ({ onAuthClick }: PremiumNavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
   const navigate = useNavigate();
   const { user, isAdmin, signOut, isLoading } = useAuthContext();
 
@@ -44,7 +44,7 @@ export const PremiumNavbar = () => {
     <>
       <motion.nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-navy/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'
+          isScrolled ? 'bg-cream/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -58,8 +58,8 @@ export const PremiumNavbar = () => {
                 <span className="text-primary-foreground font-display font-bold text-2xl">S</span>
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-display font-bold text-xl text-cream">SYFEREXPORTS</h1>
-                <p className="text-xs text-primary">Global Trade from India</p>
+                <h1 className="font-display font-bold text-xl text-foreground">Syfer Exports</h1>
+                <p className="text-xs text-muted-foreground">Global Trade from India</p>
               </div>
             </Link>
 
@@ -69,7 +69,7 @@ export const PremiumNavbar = () => {
                 <Link
                   key={link.href}
                   to={link.href}
-                  className="nav-link text-cream/80 hover:text-cream"
+                  className="nav-link text-primary hover:text-primary/80 font-medium"
                 >
                   {link.label}
                 </Link>
@@ -84,7 +84,7 @@ export const PremiumNavbar = () => {
                     <div className="flex items-center gap-3">
                       <Button
                         variant="ghost"
-                        className="text-cream/80 hover:text-cream"
+                        className="text-foreground hover:text-foreground/80"
                         onClick={handleDashboardClick}
                       >
                         <User className="h-4 w-4 mr-2" />
@@ -92,7 +92,7 @@ export const PremiumNavbar = () => {
                       </Button>
                       <Button
                         variant="ghost"
-                        className="text-cream/80 hover:text-cream"
+                        className="text-foreground hover:text-foreground/80"
                         onClick={handleLogout}
                       >
                         <LogOut className="h-4 w-4 mr-2" />
@@ -101,10 +101,10 @@ export const PremiumNavbar = () => {
                     </div>
                   ) : (
                     <Button
-                      className="premium-button"
-                      onClick={() => setShowAuth(true)}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 rounded-full"
+                      onClick={onAuthClick}
                     >
-                      Get Started
+                      Login / Register
                     </Button>
                   )}
                 </>
@@ -113,7 +113,7 @@ export const PremiumNavbar = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden text-cream"
+              className="md:hidden text-foreground"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -128,14 +128,14 @@ export const PremiumNavbar = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-navy-light/95 backdrop-blur-lg border-t border-border/30"
+              className="md:hidden bg-background/95 backdrop-blur-lg border-t border-border/30"
             >
               <div className="container mx-auto px-6 py-6 space-y-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="block py-2 text-cream/80 hover:text-cream"
+                    className="block py-2 text-foreground/80 hover:text-foreground"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.label}
@@ -146,7 +146,7 @@ export const PremiumNavbar = () => {
                     <div className="space-y-2">
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-cream/80"
+                        className="w-full justify-start text-foreground/80"
                         onClick={() => {
                           handleDashboardClick();
                           setIsMobileMenuOpen(false);
@@ -157,7 +157,7 @@ export const PremiumNavbar = () => {
                       </Button>
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-cream/80"
+                        className="w-full justify-start text-foreground/80"
                         onClick={() => {
                           handleLogout();
                           setIsMobileMenuOpen(false);
@@ -169,13 +169,13 @@ export const PremiumNavbar = () => {
                     </div>
                   ) : (
                     <Button
-                      className="w-full premium-button"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-full"
                       onClick={() => {
-                        setShowAuth(true);
+                        onAuthClick?.();
                         setIsMobileMenuOpen(false);
                       }}
                     >
-                      Get Started
+                      Login / Register
                     </Button>
                   )}
                 </div>
@@ -184,16 +184,6 @@ export const PremiumNavbar = () => {
           )}
         </AnimatePresence>
       </motion.nav>
-
-      {/* Auth Dialog */}
-      <Dialog open={showAuth} onOpenChange={setShowAuth}>
-        <DialogContent className="sm:max-w-md">
-          <VisuallyHidden>
-            <DialogTitle>Authentication</DialogTitle>
-          </VisuallyHidden>
-          <AuthForm onClose={() => setShowAuth(false)} />
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
