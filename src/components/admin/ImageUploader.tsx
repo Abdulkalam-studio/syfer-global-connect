@@ -16,7 +16,7 @@ export const ImageUploader = ({ images, onChange, maxImages = 4 }: ImageUploader
   const [dragActive, setDragActive] = useState(false);
 
   const uploadFile = async (file: File): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `products/${fileName}`;
 
@@ -26,6 +26,14 @@ export const ImageUploader = ({ images, onChange, maxImages = 4 }: ImageUploader
 
     if (error) {
       console.error('Upload error:', error);
+      // Provide specific error messages
+      if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
+        toast.error('Permission denied: Only admins can upload images. Please ensure you are logged in as an admin.');
+      } else if (error.message?.includes('Payload too large')) {
+        toast.error(`${file.name} is too large. Maximum size is 10MB.`);
+      } else {
+        toast.error(`Failed to upload ${file.name}: ${error.message}`);
+      }
       return null;
     }
 
