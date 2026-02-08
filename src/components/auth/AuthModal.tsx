@@ -4,9 +4,8 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, Building, MapPin, Loader2 } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuthStore, checkIsAdmin } from '@/store/authStore';
-import { useDataStore } from '@/store/dataStore';
-import { validatePassword, validateEmail, validatePhone, generateUserCode, generateId } from '@/lib/validation';
+import { supabase } from '@/integrations/supabase/client';
+import { validatePassword, validateEmail, validatePhone } from '@/lib/validation';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -17,8 +16,6 @@ export const AuthModal = () => {
   const [activeTab, setActiveTab] = useState<AuthTab>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuthStore();
-  const { users, addUser } = useDataStore();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -39,54 +36,43 @@ export const AuthModal = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Check admin credentials
-    const isAdmin = checkIsAdmin(loginForm.email, loginForm.password);
-    
-    if (isAdmin) {
-      const adminUser = {
-        id: 'admin',
-        username: 'Admin',
-        email: loginForm.email,
-        phone: '',
-        companyName: 'Syfer Exports',
-        location: { country: 'India', state: '', city: '' },
-        userCode: '00',
-        emailVerified: true,
-        isAdmin: true,
-        createdAt: new Date(),
-      };
-      login(adminUser);
-      toast({
-        title: 'Welcome back, Admin!',
-        description: 'Redirecting to admin dashboard...',
-      });
-      setIsLoading(false);
-      navigate('/admin');
-      return;
-    }
-
-    // Check regular user
-    const user = users.find((u) => u.email === loginForm.email);
-    if (user) {
-      // In real app, verify password hash
-      login(user);
-      toast({
-        title: `Welcome back, ${user.username}!`,
-        description: 'Redirecting to your dashboard...',
-      });
-      setIsLoading(false);
-      navigate('/dashboard');
-      return;
-    }
-
-    toast({
-      title: 'Login failed',
-      description: 'Invalid email or password. Please try again.',
-      variant: 'destructive',
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginForm.email,
+      password: loginForm.password,
     });
+
+    if (error) {
+      toast({
+        title: 'Login failed',
+        description: error.message === 'Invalid login credentials'
+          ? 'Invalid email or password. Please try again.'
+          : error.message === 'Email not confirmed'
+          ? 'Please verify your email before signing in.'
+          : error.message,
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (data.user) {
+      // Check role to determine redirect
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+
+      const isAdmin = roleData?.role === 'admin';
+
+      toast({
+        title: `Welcome back!`,
+        description: isAdmin ? 'Redirecting to admin dashboard...' : 'Redirecting to your dashboard...',
+      });
+
+      // Auth state listener in useAuth will handle setting the store
+      navigate(isAdmin ? '/admin' : '/dashboard');
+    }
     setIsLoading(false);
   };
 
@@ -114,43 +100,47 @@ export const AuthModal = () => {
       return;
     }
 
-    // Check if email exists
-    if (users.find((u) => u.email === registerForm.email)) {
-      toast({ title: 'Email already registered', variant: 'destructive' });
+    const { data, error } = await supabase.auth.signUp({
+      email: registerForm.email,
+      password: registerForm.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          username: registerForm.username,
+          phone: registerForm.phone,
+          company_name: registerForm.companyName || null,
+          country: registerForm.country,
+          state: registerForm.state,
+          city: registerForm.city,
+        },
+      },
+    });
+
+    if (error) {
+      const msg = error.message.includes('already registered')
+        ? 'This email is already registered. Please login instead.'
+        : error.message;
+      toast({ title: 'Registration failed', description: msg, variant: 'destructive' });
       setIsLoading(false);
       return;
     }
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (data.user && !data.session) {
+      // Email confirmation required
+      toast({
+        title: 'Check your email!',
+        description: 'We sent a verification link. Please confirm your email to sign in.',
+      });
+    } else if (data.session) {
+      // Auto-confirmed (if enabled)
+      toast({
+        title: 'Registration successful!',
+        description: 'Welcome to Syfer Exports.',
+      });
+      navigate('/dashboard');
+    }
 
-    const newUser = {
-      id: generateId('user'),
-      username: registerForm.username,
-      email: registerForm.email,
-      phone: registerForm.phone,
-      companyName: registerForm.companyName || undefined,
-      location: {
-        country: registerForm.country,
-        state: registerForm.state,
-        city: registerForm.city,
-      },
-      userCode: generateUserCode(),
-      emailVerified: false,
-      isAdmin: false,
-      createdAt: new Date(),
-    };
-
-    addUser(newUser);
-    login(newUser);
-    
-    toast({
-      title: 'Registration successful!',
-      description: 'Welcome to Syfer Exports. Please verify your email.',
-    });
-    
     setIsLoading(false);
-    navigate('/dashboard');
   };
 
   return (
