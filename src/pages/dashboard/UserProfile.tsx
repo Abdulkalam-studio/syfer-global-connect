@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
+import { useUpdateProfile } from '@/hooks/useProfiles';
 import { toast } from 'sonner';
 
 const UserProfile = () => {
   const { user, updateUser } = useAuthStore();
+  const updateProfile = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -20,19 +22,38 @@ const UserProfile = () => {
     city: user?.location?.city || '',
   });
 
-  const handleSave = () => {
-    updateUser({
-      username: formData.username,
-      phone: formData.phone,
-      companyName: formData.companyName,
-      location: {
-        country: formData.country,
-        state: formData.state,
-        city: formData.city,
-      },
-    });
-    setIsEditing(false);
-    toast.success('Profile updated successfully!');
+  const handleSave = async () => {
+    if (!user) return;
+    
+    try {
+      await updateProfile.mutateAsync({
+        userId: user.id,
+        updates: {
+          username: formData.username,
+          phone: formData.phone,
+          company_name: formData.companyName || null,
+          country: formData.country,
+          state: formData.state,
+          city: formData.city,
+        },
+      });
+
+      // Update local auth state too
+      updateUser({
+        username: formData.username,
+        phone: formData.phone,
+        companyName: formData.companyName,
+        location: {
+          country: formData.country,
+          state: formData.state,
+          city: formData.city,
+        },
+      });
+      
+      setIsEditing(false);
+    } catch (error) {
+      // Error handled by mutation
+    }
   };
 
   return (
@@ -146,7 +167,7 @@ const UserProfile = () => {
 
             {isEditing && (
               <div className="flex gap-4 mt-8">
-                <Button onClick={handleSave} variant="gold" className="gap-2">
+                <Button onClick={handleSave} variant="gold" className="gap-2" disabled={updateProfile.isPending}>
                   <Save className="w-4 h-4" /> Save Changes
                 </Button>
                 <Button onClick={() => setIsEditing(false)} variant="outline">

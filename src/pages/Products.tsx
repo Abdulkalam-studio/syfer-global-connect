@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Filter, X, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDataStore } from '@/store/dataStore';
+import { useProducts } from '@/hooks/useProducts';
 import { PRODUCT_CATEGORIES, ProductCategory } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,13 +16,13 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>(
     (searchParams.get('category') as ProductCategory) || 'all'
   );
-  const { products } = useDataStore();
+  const { data: products = [], isLoading } = useProducts();
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
+        product.short_description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory =
         selectedCategory === 'all' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
@@ -100,7 +101,20 @@ const Products = () => {
         {/* Products Grid */}
         <section className="py-12 lg:py-20">
           <div className="container mx-auto px-4">
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="glass-card overflow-hidden">
+                    <Skeleton className="aspect-[4/3]" />
+                    <div className="p-5 space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-6 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-muted-foreground text-lg">No products found matching your criteria.</p>
                 <Button
@@ -127,7 +141,7 @@ const Products = () => {
                       <div className="group glass-card overflow-hidden card-hover h-full">
                         <div className="relative aspect-[4/3] overflow-hidden">
                           <img
-                            src={product.images[0]}
+                            src={product.images[0] || '/placeholder.svg'}
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
@@ -144,7 +158,7 @@ const Products = () => {
                             {product.name}
                           </h3>
                           <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                            {product.shortDescription}
+                            {product.short_description}
                           </p>
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">MOQ: {product.moq.toLocaleString()}</span>
