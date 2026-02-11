@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Search, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, Search, Eye, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { AdminDashboardLayout } from '@/components/dashboard/AdminDashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDataStore } from '@/store/dataStore';
+import { useAllRFQs, useUpdateRFQ } from '@/hooks/useRFQs';
 import { formatDate } from '@/lib/validation';
 import { RFQStatus } from '@/types';
 import { RFQChat } from '@/components/chat/RFQChat';
@@ -21,36 +21,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
 
 const AdminInquiries = () => {
-  const { rfqs, users, products, updateRFQ } = useDataStore();
+  const { data: rfqs = [], isLoading } = useAllRFQs();
+  const updateRFQ = useUpdateRFQ();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRFQ, setSelectedRFQ] = useState<string | null>(null);
   const [chatRFQ, setChatRFQ] = useState<string | null>(null);
 
-  const enrichedRFQs = rfqs.map((rfq) => ({
-    ...rfq,
-    user: users.find((u) => u.id === rfq.userId),
-    product: products.find((p) => p.id === rfq.productId),
-  }));
-
-  const filteredRFQs = enrichedRFQs.filter((rfq) => {
+  const filteredRFQs = rfqs.filter((rfq: any) => {
     const matchesSearch =
-      rfq.user?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rfq.user?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rfq.product?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      rfq.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rfq.profiles?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      rfq.products?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || rfq.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const handleStatusChange = (rfqId: string, newStatus: RFQStatus) => {
-    updateRFQ(rfqId, { status: newStatus });
-    toast.success(`Status updated to ${newStatus}`);
+    updateRFQ.mutate({ id: rfqId, updates: { status: newStatus } });
   };
 
-  const selectedRFQData = enrichedRFQs.find((r) => r.id === selectedRFQ);
+  const selectedRFQData = rfqs.find((r: any) => r.id === selectedRFQ);
 
   const getStatusClass = (status: string) => {
     switch (status) {
@@ -102,114 +95,120 @@ const AdminInquiries = () => {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-yellow-500">
-              {rfqs.filter((r) => r.status === 'Pending').length}
+              {rfqs.filter((r: any) => r.status === 'Pending').length}
             </p>
             <p className="text-sm text-muted-foreground">Pending</p>
           </div>
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-blue-500">
-              {rfqs.filter((r) => r.status === 'In Discussion').length}
+              {rfqs.filter((r: any) => r.status === 'In Discussion').length}
             </p>
             <p className="text-sm text-muted-foreground">In Discussion</p>
           </div>
           <div className="glass-card p-4 text-center">
             <p className="text-2xl font-bold text-green-500">
-              {rfqs.filter((r) => r.status === 'Closed').length}
+              {rfqs.filter((r: any) => r.status === 'Closed').length}
             </p>
             <p className="text-sm text-muted-foreground">Closed</p>
           </div>
         </div>
 
         {/* RFQs Table */}
-        <div className="glass-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Date</th>
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Buyer</th>
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Email</th>
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Country</th>
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Product</th>
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Status</th>
-                  <th className="text-left py-4 px-6 text-muted-foreground font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRFQs.map((rfq, index) => (
-                  <>
-                    <tr
-                      key={rfq.id}
-                      className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${
-                        index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
-                      }`}
-                    >
-                      <td className="py-4 px-6 text-foreground">{formatDate(rfq.createdAt)}</td>
-                      <td className="py-4 px-6 text-foreground font-medium">{rfq.user?.username || 'Unknown'}</td>
-                      <td className="py-4 px-6 text-foreground">{rfq.user?.email || 'N/A'}</td>
-                      <td className="py-4 px-6 text-foreground">{rfq.country}</td>
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="text-foreground">{rfq.product?.name || 'Unknown'}</p>
-                          <p className="text-xs text-muted-foreground">Qty: {rfq.quantity.toLocaleString()}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <Select
-                          value={rfq.status}
-                          onValueChange={(value) => handleStatusChange(rfq.id, value as RFQStatus)}
-                        >
-                          <SelectTrigger className="w-[140px] h-8">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusClass(rfq.status)}`}>
-                              {rfq.status}
-                            </span>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="In Discussion">In Discussion</SelectItem>
-                            <SelectItem value="Closed">Closed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setSelectedRFQ(rfq.id)}
-                            className="gap-1"
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="glass-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Date</th>
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Buyer</th>
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Email</th>
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Country</th>
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Product</th>
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Status</th>
+                    <th className="text-left py-4 px-6 text-muted-foreground font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRFQs.map((rfq: any, index: number) => (
+                    <>
+                      <tr
+                        key={rfq.id}
+                        className={`border-b border-border/50 hover:bg-muted/30 transition-colors ${
+                          index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
+                        }`}
+                      >
+                        <td className="py-4 px-6 text-foreground">{formatDate(new Date(rfq.created_at))}</td>
+                        <td className="py-4 px-6 text-foreground font-medium">{rfq.profiles?.username || 'Unknown'}</td>
+                        <td className="py-4 px-6 text-foreground">{rfq.profiles?.email || 'N/A'}</td>
+                        <td className="py-4 px-6 text-foreground">{rfq.country}</td>
+                        <td className="py-4 px-6">
+                          <div>
+                            <p className="text-foreground">{rfq.products?.name || 'Unknown'}</p>
+                            <p className="text-xs text-muted-foreground">Qty: {rfq.quantity.toLocaleString()}</p>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <Select
+                            value={rfq.status}
+                            onValueChange={(value) => handleStatusChange(rfq.id, value as RFQStatus)}
                           >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={chatRFQ === rfq.id ? 'gold' : 'ghost'}
-                            onClick={() => setChatRFQ(chatRFQ === rfq.id ? null : rfq.id)}
-                            className="gap-1"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                            {chatRFQ === rfq.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    {chatRFQ === rfq.id && (
-                      <tr key={`${rfq.id}-chat`}>
-                        <td colSpan={7} className="p-0">
-                          <div className="p-6 bg-muted/30 border-b border-border">
-                            <RFQChat rfqId={rfq.id} userRole="admin" />
+                            <SelectTrigger className="w-[140px] h-8">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusClass(rfq.status)}`}>
+                                {rfq.status}
+                              </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Pending">Pending</SelectItem>
+                              <SelectItem value="In Discussion">In Discussion</SelectItem>
+                              <SelectItem value="Closed">Closed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedRFQ(rfq.id)}
+                              className="gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={chatRFQ === rfq.id ? 'gold' : 'ghost'}
+                              onClick={() => setChatRFQ(chatRFQ === rfq.id ? null : rfq.id)}
+                              className="gap-1"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              {chatRFQ === rfq.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </Button>
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
+                      {chatRFQ === rfq.id && (
+                        <tr key={`${rfq.id}-chat`}>
+                          <td colSpan={7} className="p-0">
+                            <div className="p-6 bg-muted/30 border-b border-border">
+                              <RFQChat rfqId={rfq.id} userRole="admin" />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
-        {filteredRFQs.length === 0 && (
+        {!isLoading && filteredRFQs.length === 0 && (
           <div className="glass-card p-12 text-center mt-6">
             <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">No Inquiries Found</h3>
@@ -229,33 +228,33 @@ const AdminInquiries = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Buyer</p>
-                  <p className="text-foreground font-medium">{selectedRFQData.user?.username}</p>
+                  <p className="text-foreground font-medium">{(selectedRFQData as any).profiles?.username}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Email</p>
-                  <p className="text-foreground">{selectedRFQData.user?.email}</p>
+                  <p className="text-foreground">{(selectedRFQData as any).profiles?.email}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Product</p>
-                  <p className="text-foreground font-medium">{selectedRFQData.product?.name}</p>
+                  <p className="text-foreground font-medium">{(selectedRFQData as any).products?.name}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Quantity</p>
-                  <p className="text-foreground">{selectedRFQData.quantity.toLocaleString()}</p>
+                  <p className="text-foreground">{(selectedRFQData as any).quantity?.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Target Price</p>
-                  <p className="text-foreground">{selectedRFQData.targetPrice || 'Not specified'}</p>
+                  <p className="text-foreground">{(selectedRFQData as any).target_price || 'Not specified'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Country</p>
-                  <p className="text-foreground">{selectedRFQData.country}</p>
+                  <p className="text-foreground">{(selectedRFQData as any).country}</p>
                 </div>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-2">Message</p>
                 <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-foreground">{selectedRFQData.message}</p>
+                  <p className="text-foreground">{(selectedRFQData as any).message}</p>
                 </div>
               </div>
             </div>

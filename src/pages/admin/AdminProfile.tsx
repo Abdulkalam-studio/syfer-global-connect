@@ -6,28 +6,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { validatePassword } from '@/lib/validation';
 
 const AdminProfile = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user } = useAuthStore();
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  const handleUpdateEmail = () => {
+  const handleUpdateEmail = async () => {
     if (newEmail && newEmail !== user?.email) {
-      updateUser({ email: newEmail });
-      toast.success('Email updated successfully!');
+      setIsUpdatingEmail(true);
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Email update requested. Check your new email for confirmation.');
+      }
+      setIsUpdatingEmail(false);
     }
   };
 
-  const handleUpdatePassword = () => {
-    if (currentPassword !== '123qwe') {
-      toast.error('Current password is incorrect');
-      return;
-    }
+  const handleUpdatePassword = async () => {
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.valid) {
       toast.error(passwordValidation.message);
@@ -37,15 +42,19 @@ const AdminProfile = () => {
       toast.error('New passwords do not match');
       return;
     }
-    toast.success('Password updated successfully!');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-  };
 
-  // Mock session data
-  const lastLogin = new Date();
-  const lastLogout = new Date(Date.now() - 86400000);
+    setIsUpdatingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+    setIsUpdatingPassword(false);
+  };
 
   return (
     <AdminDashboardLayout>
@@ -58,7 +67,7 @@ const AdminProfile = () => {
             <div className="w-24 h-24 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Shield className="w-12 h-12 text-primary" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-1">Administrator</h2>
+            <h2 className="text-xl font-bold text-foreground mb-1">{user?.username || 'Administrator'}</h2>
             <p className="text-sm text-primary mb-4">{user?.email}</p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-primary/10 text-primary">
               <Shield className="w-4 h-4" /> Admin Access
@@ -68,26 +77,16 @@ const AdminProfile = () => {
           {/* Session Info */}
           <div className="lg:col-span-2 glass-card p-6">
             <h3 className="font-display text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" /> Session Information
+              <Clock className="w-5 h-5 text-primary" /> Account Information
             </h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-muted/50 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Last Login</p>
-                <p className="text-foreground font-medium">
-                  {lastLogin.toLocaleString('en-US', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </p>
+                <p className="text-sm text-muted-foreground mb-1">Username</p>
+                <p className="text-foreground font-medium">{user?.username}</p>
               </div>
               <div className="bg-muted/50 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground mb-1">Previous Logout</p>
-                <p className="text-foreground font-medium">
-                  {lastLogout.toLocaleString('en-US', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </p>
+                <p className="text-sm text-muted-foreground mb-1">User Code</p>
+                <p className="text-foreground font-medium font-mono">{user?.userCode}</p>
               </div>
             </div>
           </div>
@@ -115,7 +114,7 @@ const AdminProfile = () => {
                   placeholder="Enter new email"
                 />
               </div>
-              <Button onClick={handleUpdateEmail} variant="gold" className="gap-2">
+              <Button onClick={handleUpdateEmail} variant="gold" className="gap-2" disabled={isUpdatingEmail}>
                 <Save className="w-4 h-4" /> Update Email
               </Button>
             </div>
@@ -127,16 +126,6 @@ const AdminProfile = () => {
               <KeyRound className="w-5 h-5 text-primary" /> Change Password
             </h3>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <Input
@@ -157,7 +146,7 @@ const AdminProfile = () => {
                   placeholder="Confirm new password"
                 />
               </div>
-              <Button onClick={handleUpdatePassword} variant="gold" className="gap-2">
+              <Button onClick={handleUpdatePassword} variant="gold" className="gap-2" disabled={isUpdatingPassword}>
                 <Save className="w-4 h-4" /> Update Password
               </Button>
             </div>
