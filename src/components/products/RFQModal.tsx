@@ -6,20 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuthStore } from '@/store/authStore';
-import { useCreateRFQ } from '@/hooks/useRFQs';
+import { useDataStore } from '@/store/dataStore';
 import { useToast } from '@/hooks/use-toast';
-import type { DbProduct } from '@/hooks/useProducts';
+import { generateId } from '@/lib/validation';
+import { Product } from '@/types';
 
 interface RFQModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product: DbProduct;
+  product: Product;
 }
 
 export const RFQModal = ({ isOpen, onClose, product }: RFQModalProps) => {
   const { user } = useAuthStore();
-  const createRFQ = useCreateRFQ();
+  const { addRFQ } = useDataStore();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [form, setForm] = useState({
     quantity: '',
@@ -32,26 +34,31 @@ export const RFQModal = ({ isOpen, onClose, product }: RFQModalProps) => {
     e.preventDefault();
     if (!user) return;
 
-    try {
-      await createRFQ.mutateAsync({
-        user_id: user.id,
-        product_id: product.id,
-        quantity: parseInt(form.quantity),
-        target_price: form.targetPrice || null,
-        country: form.country,
-        message: form.message,
-      });
+    setIsLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
-      toast({
-        title: 'RFQ Submitted Successfully!',
-        description: 'Our team will review and respond to your inquiry soon.',
-      });
+    const newRFQ = {
+      id: generateId('rfq'),
+      userId: user.id,
+      productId: product.id,
+      quantity: parseInt(form.quantity),
+      targetPrice: form.targetPrice || undefined,
+      country: form.country,
+      message: form.message,
+      status: 'Pending' as const,
+      createdAt: new Date(),
+    };
 
-      onClose();
-      setForm({ quantity: '', targetPrice: '', country: user.location.country || '', message: '' });
-    } catch (error) {
-      // Error handled by mutation
-    }
+    addRFQ(newRFQ);
+    
+    toast({
+      title: 'RFQ Submitted Successfully!',
+      description: 'Our team will review and respond to your inquiry soon.',
+    });
+
+    setIsLoading(false);
+    onClose();
+    setForm({ quantity: '', targetPrice: '', country: user.location.country || '', message: '' });
   };
 
   return (
@@ -139,8 +146,8 @@ export const RFQModal = ({ isOpen, onClose, product }: RFQModalProps) => {
                 <Button type="button" variant="glass" onClick={onClose} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" variant="gold" className="flex-1" disabled={createRFQ.isPending}>
-                  {createRFQ.isPending ? (
+                <Button type="submit" variant="gold" className="flex-1" disabled={isLoading}>
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       Submitting...

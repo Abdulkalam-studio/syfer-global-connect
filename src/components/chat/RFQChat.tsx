@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useRFQMessages, useSendMessage } from '@/hooks/useMessages';
-import { useAuthStore } from '@/store/authStore';
+import { useDataStore } from '@/store/dataStore';
+import { generateId } from '@/lib/validation';
 import { cn } from '@/lib/utils';
 
 interface RFQChatProps {
@@ -12,24 +12,27 @@ interface RFQChatProps {
 }
 
 export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
-  const { user } = useAuthStore();
-  const { data: rfqMessages = [] } = useRFQMessages(rfqId);
-  const sendMessage = useSendMessage();
+  const { messages, addMessage } = useDataStore();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const rfqMessages = messages
+    .filter((m) => m.rfqId === rfqId)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [rfqMessages.length]);
 
   const handleSend = () => {
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim()) return;
 
-    sendMessage.mutate({
-      rfq_id: rfqId,
-      sender_id: user.id,
-      sender_type: userRole,
+    addMessage({
+      id: generateId(),
+      rfqId,
+      from: userRole,
       text: newMessage.trim(),
+      createdAt: new Date(),
     });
     setNewMessage('');
   };
@@ -41,7 +44,7 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
     }
   };
 
-  const formatTime = (date: string) => {
+  const formatTime = (date: Date) => {
     return new Date(date).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -70,16 +73,16 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
               key={msg.id}
               className={cn(
                 'flex gap-3',
-                msg.sender_type === userRole ? 'flex-row-reverse' : 'flex-row'
+                msg.from === userRole ? 'flex-row-reverse' : 'flex-row'
               )}
             >
               <div
                 className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                  msg.sender_type === 'admin' ? 'bg-primary/10' : 'bg-muted'
+                  msg.from === 'admin' ? 'bg-primary/10' : 'bg-muted'
                 )}
               >
-                {msg.sender_type === 'admin' ? (
+                {msg.from === 'admin' ? (
                   <Shield className="w-4 h-4 text-primary" />
                 ) : (
                   <User className="w-4 h-4 text-muted-foreground" />
@@ -88,7 +91,7 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
               <div
                 className={cn(
                   'max-w-[70%] rounded-lg px-4 py-2',
-                  msg.sender_type === userRole
+                  msg.from === userRole
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-foreground'
                 )}
@@ -97,10 +100,10 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
                 <p
                   className={cn(
                     'text-xs mt-1',
-                    msg.sender_type === userRole ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    msg.from === userRole ? 'text-primary-foreground/70' : 'text-muted-foreground'
                   )}
                 >
-                  {formatTime(msg.created_at)}
+                  {formatTime(msg.createdAt)}
                 </p>
               </div>
             </div>
@@ -119,7 +122,7 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
             placeholder="Type your message..."
             className="flex-1"
           />
-          <Button onClick={handleSend} variant="gold" size="icon" disabled={sendMessage.isPending}>
+          <Button onClick={handleSend} variant="gold" size="icon">
             <Send className="w-4 h-4" />
           </Button>
         </div>

@@ -4,9 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
-import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.png';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -30,8 +28,7 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
     logout();
     navigate('/');
   };
@@ -52,19 +49,17 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2"
             >
-              <img 
-                src={logo} 
-                alt="Syfer Exports" 
-                className="h-10 w-auto"
-              />
-              <div className="flex flex-col">
-                <span className="text-lg font-bold text-primary leading-tight">Syfer Exports</span>
-                <span className="text-[10px] text-muted-foreground leading-tight">Global Trade from India</span>
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-display font-bold text-xl">S</span>
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="font-display font-bold text-lg text-foreground">Syfer Exports</h1>
+                <p className="text-xs text-muted-foreground -mt-1">Global Trade from India</p>
               </div>
             </motion.div>
           </Link>

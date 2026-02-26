@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useSubmitContact } from '@/hooks/useContacts';
+import { useDataStore } from '@/store/dataStore';
 import { useToast } from '@/hooks/use-toast';
+import { generateId } from '@/lib/validation';
 
 const Contact = () => {
-  const submitContact = useSubmitContact();
+  const { addContact } = useDataStore();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -22,21 +24,23 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    try {
-      await submitContact.mutateAsync(form);
-      toast({
-        title: 'Message Sent!',
-        description: 'Thank you for reaching out. We will get back to you soon.',
-      });
-      setForm({ name: '', email: '', country: '', message: '' });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send message. Please try again.',
-        variant: 'destructive',
-      });
-    }
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    addContact({
+      id: generateId('contact'),
+      ...form,
+      createdAt: new Date(),
+    });
+
+    toast({
+      title: 'Message Sent!',
+      description: 'Thank you for reaching out. We will get back to you soon.',
+    });
+
+    setForm({ name: '', email: '', country: '', message: '' });
+    setIsLoading(false);
   };
 
   const contactInfo = [
@@ -158,8 +162,8 @@ const Contact = () => {
                       />
                     </div>
 
-                    <Button type="submit" variant="gold" size="lg" className="w-full gap-2" disabled={submitContact.isPending}>
-                      {submitContact.isPending ? (
+                    <Button type="submit" variant="gold" size="lg" className="w-full gap-2" disabled={isLoading}>
+                      {isLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
                           Sending...

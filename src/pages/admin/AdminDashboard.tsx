@@ -1,20 +1,13 @@
 import { motion } from 'framer-motion';
-import { Users, Package, FileText, MessageSquare, Loader2 } from 'lucide-react';
+import { Users, Package, FileText, MessageSquare } from 'lucide-react';
 import { AdminDashboardLayout } from '@/components/dashboard/AdminDashboardLayout';
-import { useProducts } from '@/hooks/useProducts';
-import { useAllRFQs } from '@/hooks/useRFQs';
-import { useContacts } from '@/hooks/useContacts';
-import { useAllProfiles } from '@/hooks/useProfiles';
-import { formatDate } from '@/lib/validation';
+import { useDataStore } from '@/store/dataStore';
 
 const AdminDashboard = () => {
-  const { data: products = [] } = useProducts();
-  const { data: rfqs = [] } = useAllRFQs();
-  const { data: contacts = [] } = useContacts();
-  const { data: profiles = [] } = useAllProfiles();
+  const { users, products, rfqs, contacts } = useDataStore();
 
   const stats = [
-    { icon: Users, label: 'Total Users', value: profiles.length, color: 'text-blue-500 bg-blue-500/10' },
+    { icon: Users, label: 'Total Users', value: users.length, color: 'text-blue-500 bg-blue-500/10' },
     { icon: Package, label: 'Products', value: products.length, color: 'text-green-500 bg-green-500/10' },
     { icon: FileText, label: 'RFQs', value: rfqs.length, color: 'text-primary bg-primary/10' },
     { icon: MessageSquare, label: 'Contact Inquiries', value: contacts.length, color: 'text-purple-500 bg-purple-500/10' },
@@ -47,25 +40,29 @@ const AdminDashboard = () => {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 text-muted-foreground font-medium">Date</th>
+                  <th className="text-left py-3 px-4 text-muted-foreground font-medium">User</th>
                   <th className="text-left py-3 px-4 text-muted-foreground font-medium">Product</th>
-                  <th className="text-left py-3 px-4 text-muted-foreground font-medium">Qty</th>
                   <th className="text-left py-3 px-4 text-muted-foreground font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {rfqs.slice(0, 5).map((rfq: any) => (
-                  <tr key={rfq.id} className="border-b border-border/50">
-                    <td className="py-3 px-4 text-foreground">{new Date(rfq.created_at).toLocaleDateString()}</td>
-                    <td className="py-3 px-4 text-foreground">{rfq.products?.name || 'Unknown'}</td>
-                    <td className="py-3 px-4 text-foreground">{rfq.quantity?.toLocaleString()}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        rfq.status === 'Pending' ? 'status-pending' :
-                        rfq.status === 'In Discussion' ? 'status-discussion' : 'status-closed'
-                      }`}>{rfq.status}</span>
-                    </td>
-                  </tr>
-                ))}
+                {rfqs.slice(0, 5).map((rfq) => {
+                  const user = users.find((u) => u.id === rfq.userId);
+                  const product = products.find((p) => p.id === rfq.productId);
+                  return (
+                    <tr key={rfq.id} className="border-b border-border/50">
+                      <td className="py-3 px-4 text-foreground">{new Date(rfq.createdAt).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 text-foreground">{user?.username || 'Unknown'}</td>
+                      <td className="py-3 px-4 text-foreground">{product?.name || 'Unknown'}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          rfq.status === 'Pending' ? 'status-pending' :
+                          rfq.status === 'In Discussion' ? 'status-discussion' : 'status-closed'
+                        }`}>{rfq.status}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
