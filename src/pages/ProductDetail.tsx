@@ -3,24 +3,33 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Check, Package, CreditCard, Palette, 
-  ChevronLeft, ChevronRight, Play, MessageCircle 
+  ChevronLeft, ChevronRight, Play, MessageCircle, Loader2 
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { useDataStore } from '@/store/dataStore';
+import { useProductBySlug } from '@/hooks/useProducts';
 import { useAuthStore } from '@/store/authStore';
 import { RFQModal } from '@/components/products/RFQModal';
 
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { products } = useDataStore();
+  const { data: product, isLoading } = useProductBySlug(slug);
   const { isAuthenticated } = useAuthStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showRFQModal, setShowRFQModal] = useState(false);
 
-  const product = products.find((p) => p.slug === slug);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-32 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -79,7 +88,7 @@ const ProductDetail = () => {
             >
               <div className="relative aspect-square rounded-xl overflow-hidden glass-card">
                 <img
-                  src={product.images[currentImageIndex]}
+                  src={product.images[currentImageIndex] || '/placeholder.svg'}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -120,9 +129,9 @@ const ProductDetail = () => {
               )}
 
               {/* Video */}
-              {product.videoUrl && (
+              {product.video_url && (
                 <a
-                  href={product.videoUrl}
+                  href={product.video_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex items-center gap-2 text-primary hover:underline"
@@ -148,7 +157,7 @@ const ProductDetail = () => {
               </h1>
               
               <p className="text-lg text-muted-foreground mb-8">
-                {product.fullDescription}
+                {product.full_description}
               </p>
 
               {/* Key Highlight */}
@@ -157,7 +166,7 @@ const ProductDetail = () => {
                   <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
                     <Check className="w-5 h-5 text-green-500" />
                   </div>
-                  <span className="text-lg font-semibold text-green-500">{product.exportHighlight}</span>
+                  <span className="text-lg font-semibold text-green-500">{product.export_highlight}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   No export charges from our side. We handle all documentation and logistics.
@@ -180,7 +189,7 @@ const ProductDetail = () => {
                   <h3 className="font-semibold text-foreground">Payment Terms</h3>
                 </div>
                 <ul className="space-y-2">
-                  {product.paymentTerms.map((term, idx) => (
+                  {product.payment_terms.map((term, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                       {term}
@@ -195,7 +204,7 @@ const ProductDetail = () => {
                   <Palette className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold text-foreground">Customization Available</h3>
                 </div>
-                <p className="text-sm text-muted-foreground">{product.customizationNote}</p>
+                <p className="text-sm text-muted-foreground">{product.customization_note}</p>
               </div>
 
               {/* CTA Buttons */}

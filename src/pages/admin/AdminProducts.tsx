@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Plus, Search, Edit, Trash2, Star, Filter } from 'lucide-react';
+import { Package, Plus, Search, Edit, Trash2, Star, Filter, Loader2 } from 'lucide-react';
 import { AdminDashboardLayout } from '@/components/dashboard/AdminDashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDataStore } from '@/store/dataStore';
+import { useProducts, useDeleteProduct } from '@/hooks/useProducts';
 import { PRODUCT_CATEGORIES, ProductCategory } from '@/types';
-import { toast } from 'sonner';
 import { ProductFormModal } from '@/components/admin/ProductFormModal';
 import {
   AlertDialog,
@@ -27,7 +26,8 @@ import {
 } from '@/components/ui/select';
 
 const AdminProducts = () => {
-  const { products, deleteProduct } = useDataStore();
+  const { data: products = [], isLoading } = useProducts();
+  const deleteProduct = useDeleteProduct();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -42,8 +42,7 @@ const AdminProducts = () => {
 
   const handleDelete = () => {
     if (deletingProduct) {
-      deleteProduct(deletingProduct);
-      toast.success('Product deleted successfully');
+      deleteProduct.mutate(deletingProduct);
       setDeletingProduct(null);
     }
   };
@@ -118,56 +117,62 @@ const AdminProducts = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="glass-card overflow-hidden group">
-              <div className="relative aspect-video overflow-hidden">
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
-                {product.featured && (
-                  <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                    <Star className="w-3 h-3" /> Featured
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <p className="text-xs text-primary mb-1">{product.category}</p>
-                <h3 className="font-semibold text-foreground mb-2 truncate">{product.name}</h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {product.shortDescription}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    MOQ: {product.moq.toLocaleString()}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEdit(product.id)}
-                      className="gap-1"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setDeletingProduct(product.id)}
-                      className="text-destructive hover:text-destructive gap-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="glass-card overflow-hidden group">
+                <div className="relative aspect-video overflow-hidden">
+                  <img
+                    src={product.images[0] || '/placeholder.svg'}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  {product.featured && (
+                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                      <Star className="w-3 h-3" /> Featured
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="text-xs text-primary mb-1">{product.category}</p>
+                  <h3 className="font-semibold text-foreground mb-2 truncate">{product.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                    {product.short_description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      MOQ: {product.moq.toLocaleString()}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(product.id)}
+                        className="gap-1"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeletingProduct(product.id)}
+                        className="text-destructive hover:text-destructive gap-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filteredProducts.length === 0 && (
+        {!isLoading && filteredProducts.length === 0 && (
           <div className="glass-card p-12 text-center">
             <Package className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">No Products Found</h3>

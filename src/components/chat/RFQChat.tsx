@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, User, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDataStore } from '@/store/dataStore';
-import { generateId } from '@/lib/validation';
+import { useRFQMessages, useSendMessage } from '@/hooks/useMessages';
+import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
 
 interface RFQChatProps {
@@ -12,27 +12,24 @@ interface RFQChatProps {
 }
 
 export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
-  const { messages, addMessage } = useDataStore();
+  const { user } = useAuthStore();
+  const { data: rfqMessages = [] } = useRFQMessages(rfqId);
+  const sendMessage = useSendMessage();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const rfqMessages = messages
-    .filter((m) => m.rfqId === rfqId)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [rfqMessages.length]);
 
   const handleSend = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user) return;
 
-    addMessage({
-      id: generateId(),
-      rfqId,
-      from: userRole,
+    sendMessage.mutate({
+      rfq_id: rfqId,
+      sender_id: user.id,
+      sender_type: userRole,
       text: newMessage.trim(),
-      createdAt: new Date(),
     });
     setNewMessage('');
   };
@@ -44,7 +41,7 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
     }
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: string) => {
     return new Date(date).toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -73,16 +70,16 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
               key={msg.id}
               className={cn(
                 'flex gap-3',
-                msg.from === userRole ? 'flex-row-reverse' : 'flex-row'
+                msg.sender_type === userRole ? 'flex-row-reverse' : 'flex-row'
               )}
             >
               <div
                 className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                  msg.from === 'admin' ? 'bg-primary/10' : 'bg-muted'
+                  msg.sender_type === 'admin' ? 'bg-primary/10' : 'bg-muted'
                 )}
               >
-                {msg.from === 'admin' ? (
+                {msg.sender_type === 'admin' ? (
                   <Shield className="w-4 h-4 text-primary" />
                 ) : (
                   <User className="w-4 h-4 text-muted-foreground" />
@@ -91,7 +88,7 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
               <div
                 className={cn(
                   'max-w-[70%] rounded-lg px-4 py-2',
-                  msg.from === userRole
+                  msg.sender_type === userRole
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-foreground'
                 )}
@@ -100,10 +97,10 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
                 <p
                   className={cn(
                     'text-xs mt-1',
-                    msg.from === userRole ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    msg.sender_type === userRole ? 'text-primary-foreground/70' : 'text-muted-foreground'
                   )}
                 >
-                  {formatTime(msg.createdAt)}
+                  {formatTime(msg.created_at)}
                 </p>
               </div>
             </div>
@@ -122,7 +119,7 @@ export const RFQChat = ({ rfqId, userRole }: RFQChatProps) => {
             placeholder="Type your message..."
             className="flex-1"
           />
-          <Button onClick={handleSend} variant="gold" size="icon">
+          <Button onClick={handleSend} variant="gold" size="icon" disabled={sendMessage.isPending}>
             <Send className="w-4 h-4" />
           </Button>
         </div>

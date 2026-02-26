@@ -4,17 +4,17 @@ import { FileText, Calendar, Clock, ArrowRight, Package } from 'lucide-react';
 import { UserDashboardLayout } from '@/components/dashboard/UserDashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
-import { useDataStore } from '@/store/dataStore';
+import { useUserRFQs } from '@/hooks/useRFQs';
+import { useFeaturedProducts } from '@/hooks/useProducts';
 import { formatDate } from '@/lib/validation';
 
 const UserDashboard = () => {
   const { user } = useAuthStore();
-  const { rfqs, products } = useDataStore();
+  const { data: rfqs = [] } = useUserRFQs(user?.id);
+  const { data: featuredProducts = [] } = useFeaturedProducts();
 
-  const userRFQs = rfqs.filter((r) => r.userId === user?.id);
-  const pendingRFQs = userRFQs.filter((r) => r.status !== 'Closed');
-  const lastRFQ = userRFQs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-  const featuredProducts = products.filter((p) => p.featured).slice(0, 4);
+  const pendingRFQs = rfqs.filter((r: any) => r.status !== 'Closed');
+  const lastRFQ = rfqs[0]; // Already ordered by created_at desc
 
   return (
     <UserDashboardLayout>
@@ -37,7 +37,7 @@ const UserDashboard = () => {
                 <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{userRFQs.length}</p>
+                <p className="text-2xl font-bold text-foreground">{rfqs.length}</p>
                 <p className="text-sm text-muted-foreground">Total RFQs</p>
               </div>
             </div>
@@ -60,7 +60,7 @@ const UserDashboard = () => {
               </div>
               <div>
                 <p className="text-lg font-bold text-foreground">
-                  {lastRFQ ? formatDate(lastRFQ.createdAt) : 'N/A'}
+                  {lastRFQ ? formatDate(new Date(lastRFQ.created_at)) : 'N/A'}
                 </p>
                 <p className="text-sm text-muted-foreground">Last RFQ</p>
               </div>
@@ -72,7 +72,7 @@ const UserDashboard = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display text-xl font-bold text-foreground">Featured Products</h2>
-            <Link to="/dashboard/products">
+            <Link to="/products">
               <Button variant="ghost" size="sm" className="gap-1">
                 View All <ArrowRight className="w-4 h-4" />
               </Button>
@@ -83,7 +83,7 @@ const UserDashboard = () => {
               <Link key={product.id} to={`/products/${product.slug}`}>
                 <div className="glass-card overflow-hidden card-hover group">
                   <div className="aspect-video overflow-hidden">
-                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <img src={product.images[0] || '/placeholder.svg'} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                   </div>
                   <div className="p-4">
                     <p className="text-xs text-primary">{product.category}</p>

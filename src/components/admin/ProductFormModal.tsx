@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2 } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { useDataStore } from '@/store/dataStore';
-import { PRODUCT_CATEGORIES, ProductCategory, Product } from '@/types';
-import { generateId, generateSlug } from '@/lib/validation';
+import { useProducts, useAddProduct, useUpdateProduct, type DbProduct } from '@/hooks/useProducts';
+import { PRODUCT_CATEGORIES, ProductCategory } from '@/types';
+import { generateSlug } from '@/lib/validation';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ImageUploader } from './ImageUploader';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -49,7 +50,9 @@ const defaultFormData = {
 };
 
 export const ProductFormModal = ({ isOpen, onClose, editingProductId }: ProductFormModalProps) => {
-  const { products, addProduct, updateProduct } = useDataStore();
+  const { data: products = [] } = useProducts();
+  const addProduct = useAddProduct();
+  const updateProduct = useUpdateProduct();
   const [formData, setFormData] = useState(defaultFormData);
 
   const editingProduct = editingProductId ? products.find((p) => p.id === editingProductId) : null;
@@ -59,71 +62,55 @@ export const ProductFormModal = ({ isOpen, onClose, editingProductId }: ProductF
       setFormData({
         name: editingProduct.name,
         category: editingProduct.category,
-        shortDescription: editingProduct.shortDescription,
-        fullDescription: editingProduct.fullDescription,
+        shortDescription: editingProduct.short_description,
+        fullDescription: editingProduct.full_description,
         images: editingProduct.images.length > 0 ? editingProduct.images : [''],
-        videoUrl: editingProduct.videoUrl || '',
+        videoUrl: editingProduct.video_url || '',
         featured: editingProduct.featured,
         moq: editingProduct.moq,
-        exportHighlight: editingProduct.exportHighlight,
-        paymentTerms: editingProduct.paymentTerms,
-        customizationNote: editingProduct.customizationNote,
+        exportHighlight: editingProduct.export_highlight,
+        paymentTerms: editingProduct.payment_terms,
+        customizationNote: editingProduct.customization_note,
       });
     } else {
       setFormData(defaultFormData);
     }
   }, [editingProduct]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.category || !formData.shortDescription) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const productData: Omit<Product, 'id' | 'slug' | 'createdAt'> = {
+    const productData = {
       name: formData.name,
+      slug: generateSlug(formData.name),
       category: formData.category as ProductCategory,
-      shortDescription: formData.shortDescription,
-      fullDescription: formData.fullDescription,
+      short_description: formData.shortDescription,
+      full_description: formData.fullDescription,
       images: formData.images.filter((img) => img.trim() !== ''),
-      videoUrl: formData.videoUrl || undefined,
+      video_url: formData.videoUrl || null,
       featured: formData.featured,
       moq: formData.moq,
-      exportHighlight: formData.exportHighlight,
-      paymentTerms: formData.paymentTerms,
-      customizationNote: formData.customizationNote,
+      export_highlight: formData.exportHighlight,
+      payment_terms: formData.paymentTerms,
+      customization_note: formData.customizationNote,
     };
 
-    if (editingProductId) {
-      updateProduct(editingProductId, productData);
-      toast.success('Product updated successfully');
-    } else {
-      addProduct({
-        id: generateId(),
-        slug: generateSlug(formData.name),
-        createdAt: new Date(),
-        ...productData,
-      });
-      toast.success('Product added successfully');
+    try {
+      if (editingProductId) {
+        await updateProduct.mutateAsync({ id: editingProductId, updates: productData });
+      } else {
+        await addProduct.mutateAsync(productData);
+      }
+      onClose();
+    } catch (error) {
+      // Error handled by mutation
     }
-
-    onClose();
   };
 
-  const addImageField = () => {
-    setFormData({ ...formData, images: [...formData.images, ''] });
-  };
-
-  const removeImageField = (index: number) => {
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
-  };
-
-  const updateImage = (index: number, value: string) => {
-    const newImages = [...formData.images];
-    newImages[index] = value;
+  const handleImagesChange = (newImages: string[]) => {
     setFormData({ ...formData, images: newImages });
   };
 
@@ -214,30 +201,12 @@ export const ProductFormModal = ({ isOpen, onClose, editingProductId }: ProductF
           <div className="space-y-4">
             <h4 className="font-medium text-foreground border-b border-border pb-2">Media</h4>
             <div className="space-y-3">
-              <Label>Image URLs</Label>
-              {formData.images.map((img, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={img}
-                    onChange={(e) => updateImage(index, e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  {formData.images.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeImageField(index)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addImageField} className="gap-1">
-                <Plus className="w-4 h-4" /> Add Image
-              </Button>
+              <Label>Product Images</Label>
+              <ImageUploader
+                images={formData.images}
+                onChange={handleImagesChange}
+                maxImages={4}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="videoUrl">Video URL (YouTube/Vimeo)</Label>
@@ -300,7 +269,12 @@ export const ProductFormModal = ({ isOpen, onClose, editingProductId }: ProductF
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button variant="gold" onClick={handleSubmit} className="gap-2">
+            <Button 
+              variant="gold" 
+              onClick={handleSubmit} 
+              className="gap-2"
+              disabled={addProduct.isPending || updateProduct.isPending}
+            >
               <Save className="w-4 h-4" /> {editingProductId ? 'Update Product' : 'Add Product'}
             </Button>
           </div>
