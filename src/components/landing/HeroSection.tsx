@@ -10,89 +10,59 @@ export const HeroSection = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-background">
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-navy-light" />
-        
-        {/* Animated Shapes */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full bg-primary/5"
-              style={{
-                width: `${200 + i * 100}px`,
-                height: `${200 + i * 100}px`,
-                left: `${20 + i * 15}%`,
-                top: `${10 + i * 20}%`,
-              }}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.1, 0.2, 0.1],
-                x: [0, 30, 0],
-                y: [0, -30, 0],
-              }}
-              transition={{
-                duration: 8 + i * 2,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Grid Pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+      {/* Subtle background: soft gradient + faint grid */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-accent/40 via-background to-background" />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px),
-                             linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-            backgroundSize: '50px 50px',
+                              linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '56px 56px',
           }}
         />
       </div>
 
       {/* Content */}
-      <div className="container relative z-10 mx-auto px-4 py-20 lg:py-32">
+      <div className="container relative z-10 mx-auto px-4 pt-28 pb-20 lg:pt-32 lg:pb-24">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left: Hero Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.6 }}
             className="text-center lg:text-left"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent border border-border mb-6"
             >
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm text-primary font-medium">Trusted Export Partner Since 2020</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              <span className="text-xs tracking-wide uppercase text-primary font-semibold">Trusted Export Partner · Since 2020</span>
             </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
+              className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] mb-6"
             >
-              <span className="gold-text">Syfer Exports</span>
+              Premium Indian Exports,
               <br />
-              <span className="text-foreground">Global Trade from India</span>
+              <span className="italic font-normal text-secondary">delivered worldwide.</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
+              className="text-base md:text-lg text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Connecting premium Indian products with global buyers. From authentic spices to handcrafted textiles, 
-              we bring India's finest exports to your doorstep with unmatched quality and reliability.
+              A trusted sourcing partner for buyers in the UK, UAE and beyond. From authentic spices
+              to handcrafted textiles — quality assured, fully documented, and shipped on time.
             </motion.p>
 
             {/* Features */}
@@ -100,7 +70,7 @@ export const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex flex-wrap justify-center lg:justify-start gap-6 mb-8"
+              className="flex flex-wrap justify-center lg:justify-start gap-x-6 gap-y-3 mb-8"
             >
               {features.map((feature, index) => (
                 <motion.div
@@ -110,8 +80,8 @@ export const HeroSection = () => {
                   transition={{ delay: 0.6 + index * 0.1 }}
                   className="flex items-center gap-2"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <feature.icon className="w-5 h-5 text-primary" />
+                  <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
+                    <feature.icon className="w-4 h-4 text-primary" />
                   </div>
                   <span className="text-sm font-medium text-foreground">{feature.label}</span>
                 </motion.div>
@@ -123,16 +93,16 @@ export const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="grid grid-cols-3 gap-4 p-6 rounded-xl bg-card/50 backdrop-blur-xl border border-border/30"
+              className="grid grid-cols-3 divide-x divide-border rounded-lg bg-card border border-border shadow-sm overflow-hidden"
             >
               {[
                 { value: '50+', label: 'Countries' },
                 { value: '500+', label: 'Products' },
                 { value: '1000+', label: 'Shipments' },
               ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-2xl lg:text-3xl font-bold text-primary">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <div key={stat.label} className="text-center py-4 px-2">
+                  <p className="font-display text-2xl lg:text-3xl font-bold text-primary">{stat.value}</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">{stat.label}</p>
                 </div>
               ))}
             </motion.div>
