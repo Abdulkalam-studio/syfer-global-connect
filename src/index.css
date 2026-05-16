@@ -2,94 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-
-@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&display=swap");
-
-@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap");
-
-/* IndianExports Premium Design System */
+/* Syfer Exports — Navy Trust Design System
+   Palette: #0f1b3d (navy), #1e3a5f (deep), #3b6fa0 (steel blue), #e8edf3 (mist)
+   Type: Libre Baskerville (display) + IBM Plex Sans (body) */
 
 @layer base {
   :root {
-    /* Navy Blue Theme - Premium Export Brand */
-    --background: 60 4% 95%;
-    --foreground: 24 9% 10%;
+    /* Navy Trust — Light surface */
+    --background: 220 33% 97%;        /* #f4f6fa */
+    --foreground: 224 56% 15%;        /* #0f1b3d */
 
-    --card: 60 9% 97%;
-    --card-foreground: 24 9% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 56% 15%;
 
-    --popover: 20 5% 90%;
-    --popover-foreground: 24 9% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 56% 15%;
 
-    /* Rich Gold - Primary Brand Color */
-    --primary: 37 92% 50%;
-    --primary-foreground: 47 100% 96%;
+    /* Primary = Deep Navy */
+    --primary: 224 56% 15%;           /* #0f1b3d */
+    --primary-foreground: 220 33% 97%;
 
-    /* Navy Secondary */
-    --secondary: 24 5% 44%;
-    --secondary-foreground: 60 9% 97%;
+    /* Secondary = Steel Blue */
+    --secondary: 211 46% 43%;         /* #3b6fa0 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 23 5% 82%;
-    --muted-foreground: 24 9% 10%;
+    --muted: 218 28% 92%;
+    --muted-foreground: 218 18% 40%;
 
-    /* Gold Accent */
-    --accent: 47 100% 96%;
-    --accent-foreground: 37 92% 50%;
+    /* Accent = Mist */
+    --accent: 218 30% 90%;            /* #e8edf3 */
+    --accent-foreground: 224 56% 15%;
 
     --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 23 5% 82%;
-    --input: 23 5% 82%;
-    --ring: 37 92% 50%;
+    --border: 218 24% 88%;
+    --input: 218 24% 88%;
+    --ring: 211 46% 43%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    /* Custom Export Theme Colors */
-    --navy: 220 30% 6%;
-    --navy-light: 220 25% 12%;
-    --navy-lighter: 220 20% 18%;
-    --gold: 43 74% 52%;
-    --gold-light: 43 80% 65%;
-    --gold-dark: 43 70% 40%;
-    --cream: 45 30% 96%;
+    /* Brand tokens (kept for legacy class names like text-gold / bg-navy) */
+    --navy: 224 56% 15%;
+    --navy-light: 219 49% 25%;        /* #1e3a5f */
+    --navy-lighter: 211 46% 43%;
+    --gold: 224 56% 15%;              /* repurposed: navy */
+    --gold-light: 211 46% 43%;
+    --gold-dark: 224 60% 10%;
+    --cream: 218 30% 90%;
 
-    /* Glassmorphism */
-    --glass-bg: 220 30% 10% / 0.7;
-    --glass-border: 220 20% 30% / 0.3;
-    --glass-blur: 20px;
+    /* Glass */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 218 24% 80% / 0.5;
+    --glass-blur: 14px;
 
-    /* Gradients */
-    --gradient-gold: linear-gradient(135deg, hsl(43 74% 52%), hsl(43 80% 65%));
-    --gradient-navy: linear-gradient(180deg, hsl(220 30% 6%), hsl(220 25% 12%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 30% 6% / 0.9), hsl(220 25% 12% / 0.8));
+    /* Gradients (gold-text now renders as a navy→steel gradient) */
+    --gradient-gold: linear-gradient(135deg, hsl(224 56% 15%), hsl(211 46% 43%));
+    --gradient-navy: linear-gradient(180deg, hsl(224 56% 15%), hsl(219 49% 25%));
+    --gradient-hero: linear-gradient(135deg, hsl(224 56% 15% / 0.04), hsl(211 46% 43% / 0.06));
 
     /* Shadows */
-    --shadow-gold: 0 4px 30px hsl(43 74% 52% / 0.2);
-    --shadow-card: 0 8px 32px hsl(220 30% 0% / 0.4);
-    --shadow-elevated: 0 20px 60px hsl(220 30% 0% / 0.5);
+    --shadow-gold: 0 6px 20px hsl(224 56% 15% / 0.12);
+    --shadow-card: 0 4px 20px hsl(224 40% 20% / 0.06);
+    --shadow-elevated: 0 20px 50px hsl(224 40% 20% / 0.12);
 
     /* Sidebar */
-    --sidebar-background: 220 25% 8%;
-    --sidebar-foreground: 24 9% 10%;
-    --sidebar-primary: 37 92% 50%;
-    --sidebar-primary-foreground: 47 100% 96%;
-    --sidebar-accent: 24 5% 44%;
-    --sidebar-accent-foreground: 60 9% 97%;
-    --sidebar-border: 23 5% 82%;
-    --sidebar-ring: 37 92% 50%;
+    --sidebar-background: 224 56% 15%;
+    --sidebar-foreground: 220 33% 97%;
+    --sidebar-primary: 211 46% 43%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 219 49% 25%;
+    --sidebar-accent-foreground: 220 33% 97%;
+    --sidebar-border: 219 49% 25%;
+    --sidebar-ring: 211 46% 43%;
     --chart-1: 45 96% 64%;
     --chart-2: 47 95% 53%;
     --chart-3: 43 96% 56%;
     --chart-4: 37 92% 50%;
     --chart-5: 24 5% 44%;
-    --sidebar: 60 9% 97%;
-    --font-sans: 'Source Sans Pro', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Source Serif Pro', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --sidebar: 224 56% 15%;
+    --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: 'Libre Baskerville', ui-serif, Georgia, 'Times New Roman', serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -154,11 +148,12 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    letter-spacing: -0.01em;
   }
 }
 
