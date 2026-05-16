@@ -15,7 +15,7 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'Source Sans Pro',
+  				'IBM Plex Sans',
   				'ui-sans-serif',
   				'system-ui',
   				'-apple-system',
@@ -28,11 +28,12 @@ export default {
   				'sans-serif'
   			],
   			display: [
-  				'Playfair Display',
+  				'Libre Baskerville',
+  				'Georgia',
   				'serif'
   			],
   			serif: [
-  				'Source Serif Pro',
+  				'Libre Baskerville',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
